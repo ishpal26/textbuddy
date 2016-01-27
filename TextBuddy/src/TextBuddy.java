@@ -1,16 +1,21 @@
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.Scanner;
+import java.util.ArrayList;
 
 
 public class TextBuddy {
-	private static final String MESSAGE_INVALID_FORMAT = "invalid command format :%1$s";
 	
 	private static File dataFile;
 	private static ArrayList<String> list;
 	//these are the different command types
 	enum COMMAND_TYPE {
-		ADD_TEXT, DISPLAY_LIST, DELETE_TEXT, CLEAR_LIST, INVALID, EXIT
+		ADD_ENTRY, DISPLAY_LIST, DELETE_ENTRY, CLEAR_LIST, EXIT, INVALID
 	};
 	
 	// These are the correct number of parameters for each command
@@ -19,146 +24,87 @@ public class TextBuddy {
 	private static Scanner scanner = new Scanner(System.in);
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException{
-		checkArg(args);
+		
+		checkValidArg(args);
 		checkFile(args);
-		runProg();
+		runProgram();
 	}
 
-	private static void runProg() throws IOException {
-		while(true){
-			System.out.print("Enter command:");
-			String command = scanner.nextLine();
-			String userCommand = command;
-			String feedback = executeCommand(userCommand);
-			System.out.println(feedback);
+	private static void checkValidArg(String[] args) {
+		
+		if(args.length == 0){
+			printCorrectFormat();
+			System.exit(1);
 		}
 	}
 
 	private static void checkFile(String[] args) throws IOException, ClassNotFoundException {
-		File f = new File(args[0]);
-		boolean fileExist = f.exists();
-		if(fileExist == true){
+		
+		File inputFile = new File (args[0]);
+		boolean isFileValid = inputFile.exists();
+		
+		if(isFileValid == true){
 			printWelcomeMessage(args[0]);
-			dataFile = f;
-			list = getListFromFile(f);
+			dataFile = inputFile;
+			getListFromFile();
 		}else{
-			Files.createFile(f.toPath());
-			dataFile = f;
+			Files.createFile(inputFile.toPath());
+			dataFile = inputFile;
 			printWelcomeMessage(args[0]);
-			
 		}
-	}
-
-	private static ArrayList<String> getListFromFile(File f) throws IOException, ClassNotFoundException {
-		 /*Scanner s;
-		 ArrayList<String> list = new ArrayList<String>();
-		 s = new Scanner(f);
-		 while (s.hasNext()) {
-			 list.add(s.next());
-	     }	
-		 s.close();*/
-		ArrayList<String> list = new ArrayList<String>();
-		FileInputStream fin= new FileInputStream (f.getName());
-		ObjectInputStream ois = new ObjectInputStream(fin);
-		list= (ArrayList<String>)ois.readObject();
-		fin.close();
-		 return list;
-	}
-
-	private static void checkArg(String[] args) {
-		if(args.length==0){
-			System.err.println("Please input filename");
-		}
-	}
-
-	private static void printWelcomeMessage(String filename) {
-		System.out.println("Welcome to TextBuddy. "+filename+" is ready to use");
 	}
 	
-	private static String executeCommand(String userCommand) throws IOException {
-		if (userCommand.trim().equals(""))
-			return String.format(MESSAGE_INVALID_FORMAT, userCommand);
+	private static void getListFromFile() throws IOException, ClassNotFoundException {
+	
+		FileInputStream fileInStream = new FileInputStream (dataFile.getName());
+		ObjectInputStream objectInStream = new ObjectInputStream(fileInStream);
+		list = (ArrayList<String>)objectInStream.readObject();
+		fileInStream.close();
+		objectInStream.close();
+	}
+
+	private static void runProgram() throws IOException {
+		while(true){
+			printCommandLine();
+			String userCommand = scanner.nextLine();
+			executeCommand(userCommand);
+		}
+	}
+	
+	private static void executeCommand(String userCommand) throws IOException {
 
 		String commandTypeString = getFirstWord(userCommand);
-
-		COMMAND_TYPE commandType = determineCommandType(commandTypeString);
+		COMMAND_TYPE commandType = getCommandType(commandTypeString);
 
 		switch (commandType) {
-		case ADD_TEXT:
-			return addText(userCommand);
-		case DELETE_TEXT:
-			return deleteText(userCommand);
-		case DISPLAY_LIST:
-			return displayList(userCommand);
-		case CLEAR_LIST:
-			return clearList(userCommand);
-		case INVALID:
-			return String.format(MESSAGE_INVALID_FORMAT, userCommand);
-		case EXIT:
-			return exitProg();
-		default:
-			//throw an error if the command is not recognized
-			throw new Error("Unrecognized command type");
+		case ADD_ENTRY :
+			addEntry(userCommand);
+			break;
+		case DELETE_ENTRY :
+			deleteEntry(userCommand);
+			break;
+		case DISPLAY_LIST :
+			displayList(userCommand);
+			break;
+		case CLEAR_LIST :
+			clearList(userCommand);
+			break;
+		case EXIT :
+			exitProgram();
+			break;
+		default :
+			printUnrecognisedCommand(userCommand);
 		}
 	}
 	
-	private static String exitProg() throws IOException {
-		saveFile();
-		System.exit(0);
-		return null;
-	}
-
-	private static void saveFile() throws IOException{
-		FileOutputStream fout= new FileOutputStream (dataFile.getName());
-		ObjectOutputStream oos = new ObjectOutputStream(fout);
-		oos.writeObject(list);
-		oos.close();
-		fout.close();
-	}
-
-	private static String deleteText(String userCommand) {
-		String text = removeFirstWord(userCommand);
-		list.remove(Integer.parseInt(text)-1);
-		System.out.println("deleted from "+ dataFile.getName() + ": \"" + text +"\"");
-		return null;
-	}
-
-	private static String clearList(String userCommand) {
-		list.clear();
-		System.out.println("all content deleted from " + dataFile.getName());
-		return "";
-	}
-
-	private static String displayList(String userCommand) {
-		if(list.size()==0){
-			//System.out.println(dataFile.getName()+" is empty");
-			return dataFile.getName()+" is empty";
-		}
-		
-		for(int i=0;i<list.size();i++){
-			System.out.println(i+1+". "+list.get(i));
-		}
-		return "";
-	}
-
-	private static String addText(String userCommand) {
-		String text = removeFirstWord(userCommand);
-		list.add(text);
-		System.out.println("added to "+ dataFile.getName() + ": \"" + text +"\"");
-		return "added to file :"+text;
-	}
-	
-	
-	
-	
-	private static COMMAND_TYPE determineCommandType(String commandTypeString) {
+	private static COMMAND_TYPE getCommandType(String commandTypeString) {
 		if (commandTypeString == null)
 			throw new Error("command type string cannot be null!");
 
 		if (commandTypeString.equalsIgnoreCase("add")) {
-			return COMMAND_TYPE.ADD_TEXT;
+			return COMMAND_TYPE.ADD_ENTRY;
 		} else if(commandTypeString.equalsIgnoreCase("delete")){
-			return COMMAND_TYPE.DELETE_TEXT;
+			return COMMAND_TYPE.DELETE_ENTRY;
 		} else if(commandTypeString.equalsIgnoreCase("clear")){
 			return COMMAND_TYPE.CLEAR_LIST;
 		}else if (commandTypeString.equalsIgnoreCase("display")) {
@@ -170,11 +116,95 @@ public class TextBuddy {
 		}
 	}
 	
+	private static void addEntry(String userCommand) {
+		String wordsToInsert = removeFirstWord(userCommand);
+		list.add(wordsToInsert);
+		printInsertedText(wordsToInsert);
+	}
+	
+	private static void deleteEntry(String userCommand) {
+		String index = removeFirstWord(userCommand);
+		
+		if(index.equals("")){
+			printUnrecognisedCommand(userCommand);
+			return;
+		}
+		
+		int removeIndex = Integer.parseInt(index);
+		
+		if((removeIndex > list.size()) || (removeIndex <= 0)){
+			printInvalidIndex();
+		}else{
+			String deletedPhrase = list.remove(removeIndex-1);
+			printDeletedText(deletedPhrase);
+		}
+	}
+	
+	private static void displayList(String userCommand) {
+		if(list.size()==0){
+			printEmptyList();
+		}else{
+			printList();
+		}
+	}
+	
+	private static void clearList(String userCommand) {
+		list.clear();
+		System.out.println("all content deleted from " + dataFile.getName());
+	}
+	
+	private static void exitProgram() throws IOException {
+		saveFile();
+		System.exit(0);
+	}
+
+	private static void saveFile() throws IOException{
+		FileOutputStream fileOutStream= new FileOutputStream (dataFile.getName());
+		ObjectOutputStream objOutStream = new ObjectOutputStream(fileOutStream);
+		objOutStream.writeObject(list);
+		objOutStream.close();
+		fileOutStream.close();
+	}
+	
 	private static String getFirstWord(String userCommand) {
 		String commandTypeString = userCommand.trim().split("\\s+")[0];
 		return commandTypeString;
 	}
+	
 	private static String removeFirstWord(String userCommand) {
 		return userCommand.replace(getFirstWord(userCommand), "").trim();
+	}
+	
+	private static void printWelcomeMessage(String filename) {
+		System.out.println("Welcome to TextBuddy. " + filename + " is ready for use");
+	}
+	
+	private static void printCorrectFormat() {
+		System.out.println("Execution format: java progam filename.extension ");
+	}
+	
+	private static void printCommandLine() {
+		System.out.print("command: ");
+	}
+	
+	private static void printUnrecognisedCommand(String userCommand) {
+		System.out.println("Error: Unrecognized command \"" + userCommand + "\" ");
+	}
+	private static void printInsertedText(String wordsToInsert) {
+		System.out.println("added to " + dataFile.getName() + ": \"" + wordsToInsert + "\"");
+	}
+	private static void printInvalidIndex() {
+		System.out.println("Invalid deletion index");
+	}
+	private static void printDeletedText(String deletedPhrase) {
+		System.out.println("deleted from " + dataFile.getName() + ": \"" + deletedPhrase + "\"");
+	}
+	private static void printEmptyList() {
+		System.out.println(dataFile.getName() + " is empty");
+	}
+	private static void printList() {
+		for(int i=0; i<list.size(); i++){
+			System.out.println(i+1 + ". " + list.get(i));
+		}
 	}
 }
