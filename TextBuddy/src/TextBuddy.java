@@ -5,8 +5,8 @@ import java.util.*;
 
 public class TextBuddy {
 	private static final String MESSAGE_INVALID_FORMAT = "invalid command format :%1$s";
+	
 	private static File dataFile;
-	private static FileOutputStream fos;
 	private static ArrayList<String> list;
 	//these are the different command types
 	enum COMMAND_TYPE {
@@ -21,13 +21,16 @@ public class TextBuddy {
 	public static void main(String[] args) throws IOException, ClassNotFoundException{
 		checkArg(args);
 		checkFile(args);
-		
+		runProg();
+	}
+
+	private static void runProg() throws IOException {
 		while(true){
 			System.out.print("Enter command:");
 			String command = scanner.nextLine();
 			String userCommand = command;
 			String feedback = executeCommand(userCommand);
-			//System.out.println(feedback);
+			System.out.println(feedback);
 		}
 	}
 
@@ -128,13 +131,14 @@ public class TextBuddy {
 
 	private static String displayList(String userCommand) {
 		if(list.size()==0){
-			System.out.println(dataFile.getName()+" is empty");
+			//System.out.println(dataFile.getName()+" is empty");
+			return dataFile.getName()+" is empty";
 		}
 		
 		for(int i=0;i<list.size();i++){
 			System.out.println(i+1+". "+list.get(i));
 		}
-		return null;
+		return "";
 	}
 
 	private static String addText(String userCommand) {
@@ -143,10 +147,6 @@ public class TextBuddy {
 		System.out.println("added to "+ dataFile.getName() + ": \"" + text +"\"");
 		return "added to file :"+text;
 	}
-	
-	
-	
-	
 	
 	
 	
