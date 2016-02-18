@@ -27,7 +27,7 @@ public class TextBuddy {
 	
 	private static final int EXIT_WITH_ERROR = 1;
 	private static final int EXIT_WITHOUT_ERROR = 0;
-	
+	private static final int INCREMENT_INDEX = 1;
 	private static final int EMPTY_LIST_SIZE = 0;
 	
 	private static final String NO_ARGUMENT_PROVIDED = "";
@@ -264,7 +264,19 @@ public class TextBuddy {
 	}
 	
 	private static void searchList(String userCommand) {
-		// TODO Auto-generated method stub
+		String wordToSearch = removeFirstWordFromCommand(userCommand);
+		
+		if (wordToSearch.equals(NO_ARGUMENT_PROVIDED)) {
+			printUnrecognisedCommand(userCommand);
+			return;
+		}
+		int i = 1;
+		for(int j = 0; j < list.size(); j++){
+			if (list.get(j).contains(wordToSearch)) {
+					printLineWithKeyword(i, list.get(j));
+					i += INCREMENT_INDEX;
+			}
+		}
 		
 	}
 	
@@ -323,7 +335,10 @@ public class TextBuddy {
 	}
 	private static void printList() {
 		for (int i = 0; i<list.size(); i++) {
-			System.out.println(i + 1 + ". " + list.get(i));
+			System.out.println(i + INCREMENT_INDEX + ". " + list.get(i));
 		}
+	}
+	private static void printLineWithKeyword(int i, String string) {
+		System.out.println(i +". " + string );	
 	}
 }
