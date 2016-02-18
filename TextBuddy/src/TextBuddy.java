@@ -7,19 +7,36 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.util.Collections;
 
+
+/**
+ * This class is used to store, retrieve and delete the information provided by
+ * the user. We assume that the inputs are all valid and there are only 5 user commands,
+ * namely: add, delete, display, clear and exit. There can only be one deletion at a time, unless
+ * the clear command is entered. User will have to provide an integer besides the command 'delete'.
+ * For the add command, we assume that the user provides at least one argument, after the command 'add'
+ * In the case of the exit and clear commands, we assume that there are no other arguments provided
+ * other than the command itself.
+ */
 
 public class TextBuddy {
 	
 	private static File dataFile;
 	private static ArrayList<String> list;
-	//these are the different command types
-	enum COMMAND_TYPE {
-		ADD_ENTRY, DISPLAY_LIST, DELETE_ENTRY, CLEAR_LIST, EXIT, INVALID
-	};
 	
-	// These are the correct number of parameters for each command
-		private static final int PARAM_SIZE_DELETE = 1;
+	private static final int EXIT_WITH_ERROR = 1;
+	private static final int EXIT_WITHOUT_ERROR = 0;
+	
+	private static final int EMPTY_LIST_SIZE = 0;
+	
+	private static final String NO_ARGUMENT_PROVIDED = "";
+	private static final int NO_ARGUMENT_LENGTH = 0;
+	
+	//these are the different command types
+	enum CommandType {
+		ADD_ENTRY, DISPLAY_LIST, DELETE_ENTRY, CLEAR_LIST, EXIT_PROGRAM, INVALID_COMMAND, SORT_LIST, SEARCH_LIST
+	};
 	
 	private static Scanner scanner = new Scanner(System.in);
 	
@@ -29,13 +46,23 @@ public class TextBuddy {
 		checkFile(args);
 		runProgram();
 	}
-
+	/*
+	 * Checks if the user has input an argument after file name
+	*/
 	private static void checkValidArg(String[] args) {
-		
-		if(args.length == 0){
+		boolean isValidArgs = checkArgs(args);     // added for junit testing only
+		if (args.length == NO_ARGUMENT_LENGTH){
 			printCorrectFormat();
-			System.exit(1);
+			System.exit(EXIT_WITH_ERROR);
 		}
+	}
+	
+	//added for junit testing
+	public static boolean checkArgs(String[] args){
+		if (args.length == NO_ARGUMENT_LENGTH)
+			return false;
+		else
+			return true;
 	}
 
 	private static void checkFile(String[] args) throws IOException, ClassNotFoundException {
@@ -43,38 +70,62 @@ public class TextBuddy {
 		File inputFile = new File (args[0]);
 		boolean isFileValid = inputFile.exists();
 		
-		if(isFileValid == true){
+		if (isFileValid == true) {
 			printWelcomeMessage(args[0]);
 			dataFile = inputFile;
 			getListFromFile();
-		}else{
+		} else {
 			Files.createFile(inputFile.toPath());
 			dataFile = inputFile;
+			list = new ArrayList<String>();
 			printWelcomeMessage(args[0]);
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private static void getListFromFile() throws IOException, ClassNotFoundException {
-	
-		FileInputStream fileInStream = new FileInputStream (dataFile.getName());
-		ObjectInputStream objectInStream = new ObjectInputStream(fileInStream);
-		list = (ArrayList<String>)objectInStream.readObject();
-		fileInStream.close();
-		objectInStream.close();
+			FileInputStream fileInStream = new FileInputStream (dataFile.getName());
+			ObjectInputStream objectInStream = new ObjectInputStream(fileInStream);
+			list = (ArrayList<String>)objectInStream.readObject();
+			fileInStream.close();
+			objectInStream.close();
 	}
 
 	private static void runProgram() throws IOException {
-		while(true){
+		while (true) {
 			printCommandLine();
 			String userCommand = scanner.nextLine();
+			Boolean isCommandValid = checkValid(getFirstWordFromCommand(userCommand)); // added just for unit test
 			executeCommand(userCommand);
 		}
 	}
 	
+	// added in just for unit test
+	public static boolean checkValid(String userCommand){
+		switch(userCommand){
+			case "add" :
+				return true;
+			case "display" :
+				return true;
+			case "delete" :
+				return true;
+			case "clear" :
+				return true;
+			case "exit" :
+				return true;
+			case "sort" :
+				return true;
+			case "search" :
+				return true;
+			default :
+				return false;
+		}
+	
+	}
 	private static void executeCommand(String userCommand) throws IOException {
 
-		String commandTypeString = getFirstWord(userCommand);
-		COMMAND_TYPE commandType = getCommandType(commandTypeString);
+		String commandTypeString = getFirstWordFromCommand(userCommand);
+		CommandType commandType = getCommandType(commandTypeString);
 
 		switch (commandType) {
 		case ADD_ENTRY :
@@ -84,80 +135,148 @@ public class TextBuddy {
 			deleteEntry(userCommand);
 			break;
 		case DISPLAY_LIST :
-			displayList(userCommand);
+			displayList();
 			break;
 		case CLEAR_LIST :
-			clearList(userCommand);
+			clearList();
 			break;
-		case EXIT :
+		case SORT_LIST :
+			sortList();
+			break;
+		case SEARCH_LIST :
+			searchList(userCommand);
+			break;
+		case EXIT_PROGRAM :
 			exitProgram();
 			break;
 		default :
 			printUnrecognisedCommand(userCommand);
 		}
 	}
-	
-	private static COMMAND_TYPE getCommandType(String commandTypeString) {
-		if (commandTypeString == null)
-			throw new Error("command type string cannot be null!");
+	 
+	/**
+	 * This operation determines which of the supported command types the user
+	 * wants to perform
+	 * 
+	 * @param commandTypeString
+	 *            is the first word of the user command
+	 */
+	private static CommandType getCommandType(String commandTypeString) {
 
 		if (commandTypeString.equalsIgnoreCase("add")) {
-			return COMMAND_TYPE.ADD_ENTRY;
-		} else if(commandTypeString.equalsIgnoreCase("delete")){
-			return COMMAND_TYPE.DELETE_ENTRY;
-		} else if(commandTypeString.equalsIgnoreCase("clear")){
-			return COMMAND_TYPE.CLEAR_LIST;
-		}else if (commandTypeString.equalsIgnoreCase("display")) {
-			return COMMAND_TYPE.DISPLAY_LIST;
+			return CommandType.ADD_ENTRY;
+		} else if (commandTypeString.equalsIgnoreCase("delete")) {
+			return CommandType.DELETE_ENTRY;
+		} else if (commandTypeString.equalsIgnoreCase("clear")) {
+			return CommandType.CLEAR_LIST;
+		} else if (commandTypeString.equalsIgnoreCase("display")) {
+			return CommandType.DISPLAY_LIST;
 		} else if (commandTypeString.equalsIgnoreCase("exit")) {
-		 	return COMMAND_TYPE.EXIT;
+		 	return CommandType.EXIT_PROGRAM;
+		} else if (commandTypeString.equalsIgnoreCase("sort")) {
+			return CommandType.SORT_LIST;
+		} else if (commandTypeString.equalsIgnoreCase("search")) {
+			return CommandType.SEARCH_LIST;
 		} else {
-			return COMMAND_TYPE.INVALID;
+			return CommandType.INVALID_COMMAND;
 		}
 	}
+	/**
+	 * This operation adds the user's text into the list
+	 * 
+	 * @param wordsToInsert
+	 *            is the command without the first word 'add'
+	 * @throws IOException 
+	 */
 	
-	private static void addEntry(String userCommand) {
-		String wordsToInsert = removeFirstWord(userCommand);
+	private static void addEntry(String userCommand) throws IOException {
+		String wordsToInsert = removeFirstWordFromCommand(userCommand);
+		
+		if (wordsToInsert.equals(NO_ARGUMENT_PROVIDED)) {
+			printUnrecognisedCommand(userCommand);
+			return;
+		}
 		list.add(wordsToInsert);
 		printInsertedText(wordsToInsert);
+		saveFile();
 	}
 	
-	private static void deleteEntry(String userCommand) {
-		String index = removeFirstWord(userCommand);
+	/**
+	 * This operation removes an entry from the list if the index is valid
+	 * @throws IOException 
+	 * 
+	 * 
+	 */
+	
+	private static void deleteEntry(String userCommand) throws IOException {
+		String index = removeFirstWordFromCommand(userCommand);
 		
-		if(index.equals("")){
+		// Checks if user has given a index to remove
+		if (index.equals(NO_ARGUMENT_PROVIDED)) {
 			printUnrecognisedCommand(userCommand);
 			return;
 		}
 		
 		int removeIndex = Integer.parseInt(index);
 		
-		if((removeIndex > list.size()) || (removeIndex <= 0)){
+		//Ensure the index given is valid for proper deletion
+		
+		boolean candelete = canDelete(removeIndex, list.size());      // also for junit testing
+		
+		if ((removeIndex > list.size()) || (removeIndex <= EMPTY_LIST_SIZE)) {
 			printInvalidIndex();
-		}else{
+		} else {
+			// -1 as we need to account for zero indexing in an ArrayList
 			String deletedPhrase = list.remove(removeIndex-1);
 			printDeletedText(deletedPhrase);
+			saveFile();
 		}
 	}
 	
-	private static void displayList(String userCommand) {
-		if(list.size()==0){
+	// just for junit test
+	public static boolean canDelete(int index, int size){
+		if(index > size)
+			return false;
+		else if(index <=0)
+			return false;
+		else 
+			return true;
+	}
+	
+	private static void displayList() {
+		if (list.size() == EMPTY_LIST_SIZE) {
 			printEmptyList();
-		}else{
+		} else {
 			printList();
 		}
 	}
 	
-	private static void clearList(String userCommand) {
+	private static void clearList() throws IOException {
 		list.clear();
 		System.out.println("all content deleted from " + dataFile.getName());
+		saveFile();
+	}
+	
+	private static void sortList() throws IOException {
+		Collections.sort(list);
+		displayList();
+		saveFile();
+	}
+	
+	private static void searchList(String userCommand) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 	private static void exitProgram() throws IOException {
 		saveFile();
-		System.exit(0);
+		System.exit(EXIT_WITHOUT_ERROR);
 	}
 
+	/**
+	 * This operation writes the data in the list into the file given by the user
+	 * 
+	 */
 	private static void saveFile() throws IOException{
 		FileOutputStream fileOutStream= new FileOutputStream (dataFile.getName());
 		ObjectOutputStream objOutStream = new ObjectOutputStream(fileOutStream);
@@ -166,13 +285,13 @@ public class TextBuddy {
 		fileOutStream.close();
 	}
 	
-	private static String getFirstWord(String userCommand) {
+	private static String getFirstWordFromCommand(String userCommand) {
 		String commandTypeString = userCommand.trim().split("\\s+")[0];
 		return commandTypeString;
 	}
 	
-	private static String removeFirstWord(String userCommand) {
-		return userCommand.replace(getFirstWord(userCommand), "").trim();
+	private static String removeFirstWordFromCommand(String userCommand) {
+		return userCommand.replace(getFirstWordFromCommand(userCommand), "").trim();
 	}
 	
 	private static void printWelcomeMessage(String filename) {
@@ -203,8 +322,8 @@ public class TextBuddy {
 		System.out.println(dataFile.getName() + " is empty");
 	}
 	private static void printList() {
-		for(int i=0; i<list.size(); i++){
-			System.out.println(i+1 + ". " + list.get(i));
+		for (int i = 0; i<list.size(); i++) {
+			System.out.println(i + 1 + ". " + list.get(i));
 		}
 	}
 }
