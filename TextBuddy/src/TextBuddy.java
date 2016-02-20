@@ -29,9 +29,18 @@ public class TextBuddy {
 	private static final int EXIT_WITHOUT_ERROR = 0;
 	private static final int INCREMENT_INDEX = 1;
 	private static final int EMPTY_LIST_SIZE = 0;
+	private static final int NO_ARGUMENT_LENGTH = 0;
 	
 	private static final String NO_ARGUMENT_PROVIDED = "";
-	private static final int NO_ARGUMENT_LENGTH = 0;
+	private static final String MESSAGE_WELCOME = "Welcome to TextBuddy.%s is ready for use";
+	private static final String MESSAGE_TEXT_ADDED = "added to %s: \"%s\"";
+	private static final String MESSAGE_TEXT_DELETED = "deleted from %s: \"%s\"";
+	private static final String MESSAGE_LIST_CLEARED = "all content deleted from %s";
+	private static final String MESSAGE_EMPTY_LIST = "%s is empty";
+	private static final String ERROR_INVALID_INDEX = "Invalid Deletion Index";
+	private static final String ERROR_UNRECOGNIZED_COMMAND = "Error: Unrecognized command \"%s\"";
+	private static final String ERROR_INVALID_EXECUTION_FORMAT = "Execution format: java progam filename.extension";
+	
 	
 	//these are the different command types
 	enum CommandType {
@@ -39,6 +48,8 @@ public class TextBuddy {
 	};
 	
 	private static Scanner scanner = new Scanner(System.in);
+	
+	
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException{
 		
@@ -50,35 +61,34 @@ public class TextBuddy {
 	 * Checks if the user has input an argument after file name
 	*/
 	private static void checkValidArg(String[] args) {
-		boolean isValidArgs = checkArgs(args);     // added for junit testing only
-		if (args.length == NO_ARGUMENT_LENGTH){
-			printCorrectFormat();
+		if (checkArgs(args) == false){
+			showToUser(ERROR_INVALID_EXECUTION_FORMAT);
 			System.exit(EXIT_WITH_ERROR);
 		}
 	}
 	
-	//added for junit testing
 	public static boolean checkArgs(String[] args){
-		if (args.length == NO_ARGUMENT_LENGTH)
+		if (args.length == NO_ARGUMENT_LENGTH){
 			return false;
-		else
+		} else {
 			return true;
+		}
 	}
 
-	private static void checkFile(String[] args) throws IOException, ClassNotFoundException {
+	public static void checkFile(String[] args) throws IOException, ClassNotFoundException {
 		
 		File inputFile = new File (args[0]);
 		boolean isFileValid = inputFile.exists();
 		
 		if (isFileValid == true) {
-			printWelcomeMessage(args[0]);
+			showToUser(String.format(MESSAGE_WELCOME, args[0]));
 			dataFile = inputFile;
 			getListFromFile();
 		} else {
 			Files.createFile(inputFile.toPath());
 			dataFile = inputFile;
 			list = new ArrayList<String>();
-			printWelcomeMessage(args[0]);
+			showToUser(String.format(MESSAGE_WELCOME, args[0]));
 		}
 	}
 	
@@ -91,12 +101,13 @@ public class TextBuddy {
 			objectInStream.close();
 	}
 
+	
 	private static void runProgram() throws IOException {
 		while (true) {
 			printCommandLine();
 			String userCommand = scanner.nextLine();
-			Boolean isCommandValid = checkValid(getFirstWordFromCommand(userCommand)); // added just for unit test
-			executeCommand(userCommand);
+			String feedback = executeCommand(userCommand);
+			showToUser(feedback);
 		}
 	}
 	
@@ -122,26 +133,24 @@ public class TextBuddy {
 		}
 	
 	}
-	private static void executeCommand(String userCommand) throws IOException {
+	public static String executeCommand(String userCommand) throws IOException {
 
-		String commandTypeString = getFirstWordFromCommand(userCommand);
-		CommandType commandType = getCommandType(commandTypeString);
-
+		String commandWordString = getCommandWord(userCommand);
+		CommandType commandType = getCommandType(commandWordString);
+		Boolean isCommandValid = checkValid(commandWordString); // added just for unit test
+		
 		switch (commandType) {
 		case ADD_ENTRY :
-			addEntry(userCommand);
-			break;
+			return addEntry(userCommand);
 		case DELETE_ENTRY :
-			deleteEntry(userCommand);
-			break;
+			return deleteEntry(userCommand);
 		case DISPLAY_LIST :
 			displayList();
 			break;
 		case CLEAR_LIST :
-			clearList();
-			break;
+			return clearList(userCommand);
 		case SORT_LIST :
-			sortList();
+			sortList(userCommand);
 			break;
 		case SEARCH_LIST :
 			searchList(userCommand);
@@ -150,8 +159,9 @@ public class TextBuddy {
 			exitProgram();
 			break;
 		default :
-			printUnrecognisedCommand(userCommand);
+			return String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand);
 		}
+		return NO_ARGUMENT_PROVIDED;
 	}
 	 
 	/**
@@ -189,17 +199,18 @@ public class TextBuddy {
 	 * @throws IOException 
 	 */
 	
-	private static void addEntry(String userCommand) throws IOException {
+	public static String addEntry(String userCommand) throws IOException {
 		String wordsToInsert = removeFirstWordFromCommand(userCommand);
 		
 		if (wordsToInsert.equals(NO_ARGUMENT_PROVIDED)) {
-			printUnrecognisedCommand(userCommand);
-			return;
+			return String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand);
 		}
 		list.add(wordsToInsert);
-		printInsertedText(wordsToInsert);
 		saveFile();
+		
+		return String.format(MESSAGE_TEXT_ADDED, dataFile.getName(),wordsToInsert);
 	}
+	
 	
 	/**
 	 * This operation removes an entry from the list if the index is valid
@@ -208,56 +219,51 @@ public class TextBuddy {
 	 * 
 	 */
 	
-	private static void deleteEntry(String userCommand) throws IOException {
+	public static String deleteEntry(String userCommand) throws IOException {
 		String index = removeFirstWordFromCommand(userCommand);
 		
 		// Checks if user has given a index to remove
 		if (index.equals(NO_ARGUMENT_PROVIDED)) {
-			printUnrecognisedCommand(userCommand);
-			return;
+			return ERROR_INVALID_INDEX;
 		}
-		
+
+		//Ensure the index given is valid for proper deletion	
 		int removeIndex = Integer.parseInt(index);
+		boolean canDelete = canDelete(removeIndex, list.size());
 		
-		//Ensure the index given is valid for proper deletion
-		
-		boolean candelete = canDelete(removeIndex, list.size());      // also for junit testing
-		
-		if ((removeIndex > list.size()) || (removeIndex <= EMPTY_LIST_SIZE)) {
-			printInvalidIndex();
+		if (canDelete == false) {
+			return ERROR_INVALID_INDEX;
 		} else {
 			// -1 as we need to account for zero indexing in an ArrayList
 			String deletedPhrase = list.remove(removeIndex-1);
-			printDeletedText(deletedPhrase);
 			saveFile();
+			return String.format(MESSAGE_TEXT_DELETED, dataFile.getName(),deletedPhrase);
 		}
 	}
 	
-	// just for junit test
 	public static boolean canDelete(int index, int size){
-		if(index > size)
+		if((index > size) || (index <= EMPTY_LIST_SIZE)){
 			return false;
-		else if(index <=0)
-			return false;
-		else 
+		} else{ 
 			return true;
+		}
 	}
 	
 	private static void displayList() {
 		if (list.size() == EMPTY_LIST_SIZE) {
-			printEmptyList();
+			showToUser(String.format(MESSAGE_EMPTY_LIST, dataFile.getName()));
 		} else {
 			printList();
 		}
 	}
 	
-	private static void clearList() throws IOException {
+	public static String clearList(String userCommand) throws IOException {
 		list.clear();
-		System.out.println("all content deleted from " + dataFile.getName());
 		saveFile();
+		return String.format(MESSAGE_LIST_CLEARED, dataFile.getName());
 	}
 	
-	private static void sortList() throws IOException {
+	private static void sortList(String userCommand) throws IOException {
 		Collections.sort(list);
 		displayList();
 		saveFile();
@@ -267,7 +273,7 @@ public class TextBuddy {
 		String wordToSearch = removeFirstWordFromCommand(userCommand);
 		
 		if (wordToSearch.equals(NO_ARGUMENT_PROVIDED)) {
-			printUnrecognisedCommand(userCommand);
+			showToUser(String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand));
 			return;
 		}
 		int i = 1;
@@ -297,47 +303,30 @@ public class TextBuddy {
 		fileOutStream.close();
 	}
 	
-	private static String getFirstWordFromCommand(String userCommand) {
+	private static String getCommandWord(String userCommand) {
 		String commandTypeString = userCommand.trim().split("\\s+")[0];
 		return commandTypeString;
 	}
 	
 	private static String removeFirstWordFromCommand(String userCommand) {
-		return userCommand.replace(getFirstWordFromCommand(userCommand), "").trim();
+		return userCommand.replace(getCommandWord(userCommand), "").trim();
 	}
 	
-	private static void printWelcomeMessage(String filename) {
-		System.out.println("Welcome to TextBuddy. " + filename + " is ready for use");
-	}
 	
-	private static void printCorrectFormat() {
-		System.out.println("Execution format: java progam filename.extension ");
+	private static void showToUser(String feedback) {
+		System.out.println(feedback);
 	}
 	
 	private static void printCommandLine() {
 		System.out.print("command: ");
 	}
 	
-	private static void printUnrecognisedCommand(String userCommand) {
-		System.out.println("Error: Unrecognized command \"" + userCommand + "\" ");
-	}
-	private static void printInsertedText(String wordsToInsert) {
-		System.out.println("added to " + dataFile.getName() + ": \"" + wordsToInsert + "\"");
-	}
-	private static void printInvalidIndex() {
-		System.out.println("Invalid deletion index");
-	}
-	private static void printDeletedText(String deletedPhrase) {
-		System.out.println("deleted from " + dataFile.getName() + ": \"" + deletedPhrase + "\"");
-	}
-	private static void printEmptyList() {
-		System.out.println(dataFile.getName() + " is empty");
-	}
 	private static void printList() {
 		for (int i = 0; i<list.size(); i++) {
 			System.out.println(i + INCREMENT_INDEX + ". " + list.get(i));
 		}
 	}
+	
 	private static void printLineWithKeyword(int i, String string) {
 		System.out.println(i +". " + string );	
 	}
