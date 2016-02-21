@@ -206,7 +206,7 @@ public class TextBuddy {
 		if (wordsToInsert.equals(NO_ARGUMENT_PROVIDED)) {
 			return String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand);
 		} else if (list.contains(wordsToInsert)) {
-			return String.format(ERROR_DUPLICATE_DETECTED, userCommand);
+			return String.format(ERROR_DUPLICATE_DETECTED, wordsToInsert);
 		} else{
 			list.add(wordsToInsert);
 			saveFile();
@@ -225,6 +225,10 @@ public class TextBuddy {
 	
 	public static String deleteEntry(String userCommand) throws IOException {
 		String index = removeFirstWordFromCommand(userCommand);
+		
+		if (list.size() == EMPTY_LIST_SIZE) {
+			return String.format(MESSAGE_EMPTY_LIST, dataFile.getName());
+		}
 		
 		// Checks if user has given a index to remove
 		if (index.equals(NO_ARGUMENT_PROVIDED)) {
@@ -280,6 +284,10 @@ public class TextBuddy {
 	private static void searchList(String userCommand) {
 		String wordToSearch = removeFirstWordFromCommand(userCommand).toLowerCase();
 		
+		if(list.size() == EMPTY_LIST_SIZE){
+			showToUser(String.format(MESSAGE_EMPTY_LIST, dataFile.getName()));
+		}
+		
 		if (wordToSearch.equals(NO_ARGUMENT_PROVIDED)) {
 			showToUser(String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand));
 			return;
@@ -288,7 +296,7 @@ public class TextBuddy {
 		int i = PRINT_LIST_START_INDEX;
 		for (int j = 0; j < list.size(); j++) {
 			if (list.get(j).toLowerCase().contains(wordToSearch)) {
-					printLineWithKeyword(i, list.get(j));
+					printLinesWithKeyword(i, list.get(j));
 					i += INCREMENT_INDEX;
 			}
 		}
@@ -321,7 +329,6 @@ public class TextBuddy {
 		return userCommand.replace(getCommandWord(userCommand), "").trim();
 	}
 	
-	
 	private static void showToUser(String feedback) {
 		System.out.println(feedback);
 	}
@@ -336,7 +343,12 @@ public class TextBuddy {
 		}
 	}
 	
-	private static void printLineWithKeyword(int i, String string) {
+	private static void printLinesWithKeyword(int i, String string) {
 		System.out.println(i +". " + string );	
 	}
-}
+	
+	public static int getLineCount(){
+		return list.size();
+	}
+}	
+
