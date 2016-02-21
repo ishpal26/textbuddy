@@ -27,19 +27,24 @@ public class TextBuddy {
 	
 	private static final int EXIT_WITH_ERROR = 1;
 	private static final int EXIT_WITHOUT_ERROR = 0;
+	private static final int PRINT_LIST_START_INDEX = 1;
 	private static final int INCREMENT_INDEX = 1;
 	private static final int EMPTY_LIST_SIZE = 0;
 	private static final int NO_ARGUMENT_LENGTH = 0;
 	
 	private static final String NO_ARGUMENT_PROVIDED = "";
+	
+	
 	private static final String MESSAGE_WELCOME = "Welcome to TextBuddy.%s is ready for use";
 	private static final String MESSAGE_TEXT_ADDED = "added to %s: \"%s\"";
 	private static final String MESSAGE_TEXT_DELETED = "deleted from %s: \"%s\"";
 	private static final String MESSAGE_LIST_CLEARED = "all content deleted from %s";
 	private static final String MESSAGE_EMPTY_LIST = "%s is empty";
-	private static final String ERROR_INVALID_INDEX = "Invalid Deletion Index";
+	
+	private static final String ERROR_DUPLICATE_DETECTED = "Error: Duplicate content \"%s\" detected";
+	private static final String ERROR_INVALID_INDEX = "Error: Invalid Deletion Index";
 	private static final String ERROR_UNRECOGNIZED_COMMAND = "Error: Unrecognized command \"%s\"";
-	private static final String ERROR_INVALID_EXECUTION_FORMAT = "Execution format: java progam filename.extension";
+	private static final String ERROR_INVALID_EXECUTION_FORMAT = "Error: Execution format --> java progam filename.extension";
 	
 	
 	//these are the different command types
@@ -49,10 +54,7 @@ public class TextBuddy {
 	
 	private static Scanner scanner = new Scanner(System.in);
 	
-	
-	
 	public static void main(String[] args) throws IOException, ClassNotFoundException{
-		
 		checkValidArg(args);
 		checkFile(args);
 		runProgram();
@@ -101,7 +103,6 @@ public class TextBuddy {
 			objectInStream.close();
 	}
 
-	
 	private static void runProgram() throws IOException {
 		while (true) {
 			printCommandLine();
@@ -150,7 +151,7 @@ public class TextBuddy {
 		case CLEAR_LIST :
 			return clearList(userCommand);
 		case SORT_LIST :
-			sortList(userCommand);
+			sortList();
 			break;
 		case SEARCH_LIST :
 			searchList(userCommand);
@@ -161,7 +162,7 @@ public class TextBuddy {
 		default :
 			return String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand);
 		}
-		return NO_ARGUMENT_PROVIDED;
+		return "";
 	}
 	 
 	/**
@@ -204,9 +205,12 @@ public class TextBuddy {
 		
 		if (wordsToInsert.equals(NO_ARGUMENT_PROVIDED)) {
 			return String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand);
+		} else if (list.contains(wordsToInsert)) {
+			return String.format(ERROR_DUPLICATE_DETECTED, userCommand);
+		} else{
+			list.add(wordsToInsert);
+			saveFile();
 		}
-		list.add(wordsToInsert);
-		saveFile();
 		
 		return String.format(MESSAGE_TEXT_ADDED, dataFile.getName(),wordsToInsert);
 	}
@@ -242,9 +246,9 @@ public class TextBuddy {
 	}
 	
 	public static boolean canDelete(int index, int size){
-		if((index > size) || (index <= EMPTY_LIST_SIZE)){
+		if ((index > size) || (index <= EMPTY_LIST_SIZE)) {
 			return false;
-		} else{ 
+		} else { 
 			return true;
 		}
 	}
@@ -263,22 +267,27 @@ public class TextBuddy {
 		return String.format(MESSAGE_LIST_CLEARED, dataFile.getName());
 	}
 	
-	private static void sortList(String userCommand) throws IOException {
-		Collections.sort(list);
-		displayList();
-		saveFile();
+	private static void sortList() throws IOException{
+		if (list.size() == EMPTY_LIST_SIZE){
+			showToUser(String.format(MESSAGE_EMPTY_LIST, dataFile.getName()));
+		} else {
+			Collections.sort(list, String.CASE_INSENSITIVE_ORDER);
+			displayList();
+			saveFile();
+		}
 	}
 	
 	private static void searchList(String userCommand) {
-		String wordToSearch = removeFirstWordFromCommand(userCommand);
+		String wordToSearch = removeFirstWordFromCommand(userCommand).toLowerCase();
 		
 		if (wordToSearch.equals(NO_ARGUMENT_PROVIDED)) {
 			showToUser(String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand));
 			return;
 		}
-		int i = 1;
-		for(int j = 0; j < list.size(); j++){
-			if (list.get(j).contains(wordToSearch)) {
+		
+		int i = PRINT_LIST_START_INDEX;
+		for (int j = 0; j < list.size(); j++) {
+			if (list.get(j).toLowerCase().contains(wordToSearch)) {
 					printLineWithKeyword(i, list.get(j));
 					i += INCREMENT_INDEX;
 			}
