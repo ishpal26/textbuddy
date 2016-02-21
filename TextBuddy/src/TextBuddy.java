@@ -271,7 +271,7 @@ public class TextBuddy {
 		return String.format(MESSAGE_LIST_CLEARED, dataFile.getName());
 	}
 	
-	private static void sortList() throws IOException{
+	public static void sortList() throws IOException{
 		if (list.size() == EMPTY_LIST_SIZE){
 			showToUser(String.format(MESSAGE_EMPTY_LIST, dataFile.getName()));
 		} else {
@@ -349,6 +349,9 @@ public class TextBuddy {
 	
 	public static int getLineCount(){
 		return list.size();
+	}
+	public static String getListContent(int index){
+		return list.get(index);
 	}
 }	
 

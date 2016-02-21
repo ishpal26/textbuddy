@@ -45,17 +45,6 @@ public class TextBuddyTest {
 		assertEquals(true, TextBuddy.checkArgs(arr));
 	}
 	
-
-	
-	@Test
-	public void testClear() throws IOException{
-		assertEquals("all content deleted from file.txt", TextBuddy.executeCommand("clear"));
-		TextBuddy.executeCommand("add" + TEXT1);
-		assertEquals("all content deleted from file.txt", TextBuddy.executeCommand("clear"));
-		assertEquals("Error: Unrecognized command \"" +"clearer" + "\"", TextBuddy.executeCommand("clearer"));
-		assertEquals(0, TextBuddy.getLineCount());
-	}
-	
 	@Test
 	public void testAdd() throws Exception{
 		TextBuddy.executeCommand("clear");
@@ -68,7 +57,18 @@ public class TextBuddyTest {
 	}	
 	
 	@Test
+	public void testClear() throws IOException{
+		assertEquals("all content deleted from file.txt", TextBuddy.executeCommand("clear"));
+		TextBuddy.executeCommand("add" + TEXT1);
+		assertEquals("all content deleted from file.txt", TextBuddy.executeCommand("clear"));
+		assertEquals("Error: Unrecognized command \"" +"clearer" + "\"", TextBuddy.executeCommand("clearer"));
+		assertEquals(0, TextBuddy.getLineCount());
+	}
+	
+	@Test
 	public void testDelete() throws Exception{
+		testClear();
+		assertEquals(0,TextBuddy.getLineCount());
 		assertEquals("file.txt is empty", TextBuddy.deleteEntry("4"));
 		addLines();
 		assertEquals(8, TextBuddy.getLineCount());
@@ -91,16 +91,19 @@ public class TextBuddyTest {
 	}
 	
 	@Test
-	public void testSort(){
-		//TextBuddy.sortList("");
-		ArrayList<String> testList = new ArrayList();
-		testList.add(TEXT1);
-		testList.add(TEXT2);
-		testList.add(TEXT3);
-		testList.add(TEXT4);
-		testList.add(TEXT5);
-		testList.add(TEXT6);
+	public void testSort() throws Exception{
+		addLines();
+		TextBuddy.sortList();
+		assertEquals(TEXT8, TextBuddy.getListContent(0));
+		assertEquals(TEXT5, TextBuddy.getListContent(1));
+		assertEquals(TEXT6, TextBuddy.getListContent(2));
+		assertEquals(TEXT3, TextBuddy.getListContent(3));
+		assertEquals(TEXT1, TextBuddy.getListContent(4));
+		assertEquals(TEXT7, TextBuddy.getListContent(5));
+		assertEquals(TEXT4, TextBuddy.getListContent(6));
+		assertEquals(TEXT2, TextBuddy.getListContent(7));
 	}
+	
 	
 	public void addLines() throws Exception{
 		TextBuddy.executeCommand("add " + TEXT1 );
