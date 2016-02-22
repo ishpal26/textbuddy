@@ -20,6 +20,7 @@ public class TextBuddyTest {
 	
 	public static final String SORTED_LIST = "1. Apple\n2. Cookies n cream\n3. Elephant\n4. Hello\n5. Jam and bread\n"
 											  + "6. Night hawk\n7. Night time\n8. Oranges\n";
+	public static final String SEARCH_RESULT ="1. Night time\n2. Night hawk\n";
 	
 	
 	@BeforeClass
@@ -94,8 +95,12 @@ public class TextBuddyTest {
 	}
 	
 	@Test
-	public void testSearch(){
+	public void testSearch() throws IOException{
 		assertEquals(SEARCH_RESULT, TextBuddy.searchList("search night"));
+		assertEquals("\"cs2103\" not found in list", TextBuddy.searchList("search cs2103"));
+		assertEquals("Error: Unrecognized command \"search \"", TextBuddy.searchList("search "));
+		testClear();
+		assertEquals(TESTFILENAME +" is empty", TextBuddy.searchList("Hello"));
 	}
 
 	public void addLines() throws Exception{
