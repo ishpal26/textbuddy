@@ -18,6 +18,10 @@ public class TextBuddyTest {
 	public static final String TEXT8 = "Apple";
 	public static final String TESTFILENAME = "file.txt";
 	
+	public static final String SORTED_LIST = "1. Apple\n2. Cookies n cream\n3. Elephant\n4. Hello\n5. Jam and bread\n"
+											  + "6. Night hawk\n7. Night time\n8. Oranges\n";
+	
+	
 	@BeforeClass
 	public static void setUpBeforeClass() throws ClassNotFoundException, IOException{
 		String[] argArray = new String[1];
@@ -47,9 +51,9 @@ public class TextBuddyTest {
 	
 	@Test
 	public void testClear() throws IOException{
-		assertEquals("all content deleted from file.txt", TextBuddy.executeCommand("clear"));
+		assertEquals("all content deleted from file.txt", TextBuddy.clearList("clear"));
 		TextBuddy.executeCommand("add" + TEXT1);
-		assertEquals("all content deleted from file.txt", TextBuddy.executeCommand("clear"));
+		assertEquals("all content deleted from file.txt", TextBuddy.clearList("clear"));
 		assertEquals("Error: Unrecognized command \"" +"clearer" + "\"", TextBuddy.executeCommand("clearer"));
 		assertEquals(0, TextBuddy.getLineCount());
 	}
@@ -58,12 +62,12 @@ public class TextBuddyTest {
 	public void testDelete() throws Exception{
 		testClear();
 		assertEquals(0,TextBuddy.getLineCount());
-		assertEquals("file.txt is empty", TextBuddy.deleteEntry("4"));
+		assertEquals("file.txt is empty", TextBuddy.deleteEntry("delete 4"));
 		addLines();
 		assertEquals(8, TextBuddy.getLineCount());
-		assertEquals("Error: Invalid Deletion Index", TextBuddy.deleteEntry("0"));
-		assertEquals("Error: Invalid Deletion Index", TextBuddy.deleteEntry("9"));
-		assertEquals("Error: Invalid Deletion Index", TextBuddy.deleteEntry("-1"));
+		assertEquals("Error: Invalid Deletion Index", TextBuddy.deleteEntry("delete 0"));
+		assertEquals("Error: Invalid Deletion Index", TextBuddy.deleteEntry("delete 9"));
+		assertEquals("Error: Invalid Deletion Index", TextBuddy.deleteEntry("delete -1"));
 		assertEquals("Error: Invalid Deletion Index", TextBuddy.executeCommand("delete"));
 		assertEquals("deleted from file.txt: \""+TEXT3+"\"",TextBuddy.executeCommand("delete 3"));
 		assertEquals(7, TextBuddy.getLineCount());
@@ -81,23 +85,17 @@ public class TextBuddyTest {
 	
 	@Test
 	public void testSort() throws Exception{
+		testClear();
+		assertEquals(TESTFILENAME +" is empty",TextBuddy.sortList());
 		assertEquals(0, TextBuddy.getLineCount());
 		addLines();
-		TextBuddy.sortList();
-		assertEquals(TEXT8, TextBuddy.getListContent(0));
-		assertEquals(TEXT5, TextBuddy.getListContent(1));
-		assertEquals(TEXT6, TextBuddy.getListContent(2));
-		assertEquals(TEXT3, TextBuddy.getListContent(3));
-		assertEquals(TEXT1, TextBuddy.getListContent(4));
-		assertEquals(TEXT7, TextBuddy.getListContent(5));
-		assertEquals(TEXT4, TextBuddy.getListContent(6));
-		assertEquals(TEXT2, TextBuddy.getListContent(7));
+		assertEquals(SORTED_LIST,TextBuddy.sortList());
 		assertEquals(8, TextBuddy.getLineCount());
 	}
 	
 	@Test
 	public void testSearch(){
-		
+		assertEquals(SEARCH_RESULT, TextBuddy.searchList("search night"));
 	}
 
 	public void addLines() throws Exception{
