@@ -19,14 +19,54 @@ import java.util.Collections;
  * 
  * 1) We assume that the inputs are all valid and there are only 7 user commands,
  *    namely: add, delete, display, clear, sort, search and exit.
- * 2) All user commands are in lower case.
- * 3) There can only be one deletion at a time, unless the clear command is entered. 
- * 4) User will have to provide an integer besides the command 'delete'.
- * 5) For the add command, we assume that the user provides at least one argument, after the command 'add'
- * 6) In the case of the exit, sort, clear and display commands, 
+ * 2) There can only be one deletion at a time, unless the clear command is entered. 
+ * 3) User will have to provide an integer besides the command 'delete'.
+ * 4) For the add command, we assume that the user provides at least one argument, after the command 'add'
+ * 5) In the case of the exit, sort, clear and display commands, 
  *    we assume that there are no other arguments provided other than the command itself.
- * 7) For the search command, we assume that there is only one keyword provided by the user.
+ * 6) For the search command, we assume that there is only one keyword provided by the user.
  * 
+ * The command format is given by the example stated below:
+ * 		Welcome to TextBuddy.file.txt is ready for use
+ * 		command: hello
+ * 		Error: Unrecognized command "hello"
+ * 		command: add hello
+ * 		added to file.txt: "hello"
+ * 		command: add world
+ * 		added to file.txt: "world"
+ * 		command: add Hello
+ * 		added to file.txt: "Hello"
+ * 		command: display
+ * 		1. hello
+ * 		2. world
+ * 		3. Hello
+ * 		
+ * 		command: sort
+ * 		list sorted alphabetically
+ * 		1. hello
+ * 		2. Hello
+ * 		3. world
+ * 
+ * 		command: delete 2
+ * 		deleted from file.txt: "Hello"
+ * 		command: delete 10
+ * 		Error: Invalid Deletion Index
+ * 		command: display
+ * 		1. hello
+ * 		2. world
+ *		 
+ * 		command: add World
+ * 		added to file.txt: "World"
+ * 		command: search world
+ * 		1. world
+ * 		2. World
+ *		 
+ * 		command: clear
+ * 		all content deleted from file.txt
+ * 		command: display
+ * 		file.txt is empty
+ * 		command: exit
+ * 		
  * @author Ishpal Singh Gill
  */
 
@@ -45,7 +85,7 @@ public class TextBuddy {
 	private static final String NO_ARGUMENT_PROVIDED = "";
 	private static final String EMPTY_STRING = "";
 	
-	
+	// These are all the messages which will be shown to the user
 	private static final String MESSAGE_WELCOME = "Welcome to TextBuddy.%s is ready for use";
 	private static final String MESSAGE_TEXT_ADDED = "added to %s: \"%s\"";
 	private static final String MESSAGE_TEXT_DELETED = "deleted from %s: \"%s\"";
@@ -54,13 +94,14 @@ public class TextBuddy {
 	private static final String MESSAGE_SORT_COMPLETE = "list sorted alphabetically";
 	private static final String MESSAGE_KEYWORD_NOT_FOUND = "\"%s\" not found in list";
 	
+	// These are the possible error messages shown to the user
 	private static final String ERROR_DUPLICATE_DETECTED = "Error: Duplicate content \"%s\" detected";
 	private static final String ERROR_INVALID_INDEX = "Error: Invalid Deletion Index";
 	private static final String ERROR_UNRECOGNIZED_COMMAND = "Error: Unrecognized command \"%s\"";
 	private static final String ERROR_INVALID_EXECUTION_FORMAT = "Error: Execution format --> java progam filename.extension";
 	
 	
-	//these are the different command types
+	// These are the different command types
 	enum CommandType {
 		ADD_ENTRY, DISPLAY_LIST, DELETE_ENTRY, CLEAR_LIST, EXIT_PROGRAM, INVALID_COMMAND, SORT_LIST, SEARCH_LIST
 	};
@@ -76,20 +117,24 @@ public class TextBuddy {
 	 * Checks if the user has input an argument after file name
 	*/
 	private static void checkValidArg(String[] args) {
-		if (checkArgs(args) == false){
+		if (checkArgs(args) == false) {
 			showToUser(ERROR_INVALID_EXECUTION_FORMAT);
 			System.exit(EXIT_WITH_ERROR);
 		}
 	}
 	
 	public static boolean checkArgs(String[] args){
-		if (args.length == NO_ARGUMENT_LENGTH){
+		if (args.length == NO_ARGUMENT_LENGTH) {
 			return false;
 		} else {
 			return true;
 		}
 	}
-
+	
+	/**
+	 * This operation checks if the filename given by the user is valid
+	 * It creates a file if filename is invalid
+	 */
 	public static void checkFile(String[] args) throws IOException, ClassNotFoundException {
 		
 		File inputFile = new File (args[0]);
@@ -109,11 +154,11 @@ public class TextBuddy {
 	
 	@SuppressWarnings("unchecked")
 	private static void getListFromFile() throws IOException, ClassNotFoundException {
-			FileInputStream fileInStream = new FileInputStream (dataFile.getName());
-			ObjectInputStream objectInStream = new ObjectInputStream(fileInStream);
-			list = (ArrayList<String>)objectInStream.readObject();
-			fileInStream.close();
-			objectInStream.close();
+		FileInputStream fileInStream = new FileInputStream (dataFile.getName());
+		ObjectInputStream objectInStream = new ObjectInputStream(fileInStream);
+		list = (ArrayList<String>)objectInStream.readObject();
+		fileInStream.close();
+		objectInStream.close();
 	}
 
 	private static void runProgram() throws IOException {
@@ -125,33 +170,10 @@ public class TextBuddy {
 		}
 	}
 	
-	// added in just for unit test
-	public static boolean checkValid(String userCommand){
-		switch(userCommand){
-			case "add" :
-				return true;
-			case "display" :
-				return true;
-			case "delete" :
-				return true;
-			case "clear" :
-				return true;
-			case "exit" :
-				return true;
-			case "sort" :
-				return true;
-			case "search" :
-				return true;
-			default :
-				return false;
-		}
-	
-	}
 	public static String executeCommand(String userCommand) throws IOException {
 
 		String commandWordString = getCommandWord(userCommand);
 		CommandType commandType = getCommandType(commandWordString);
-		Boolean isCommandValid = checkValid(commandWordString); // added just for unit test
 		
 		switch (commandType) {
 		case ADD_ENTRY :
@@ -218,12 +240,11 @@ public class TextBuddy {
 			return String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand);
 		} else if (list.contains(wordsToInsert)) {
 			return String.format(ERROR_DUPLICATE_DETECTED, wordsToInsert);
-		} else{
+		} else {
 			list.add(wordsToInsert);
 			saveFile();
+			return String.format(MESSAGE_TEXT_ADDED, dataFile.getName(),wordsToInsert);
 		}
-		
-		return String.format(MESSAGE_TEXT_ADDED, dataFile.getName(),wordsToInsert);
 	}
 	
 	/**
@@ -260,7 +281,7 @@ public class TextBuddy {
 		}
 	}
 	
-	public static boolean validDeleteIndex(int index, int size){
+	public static boolean validDeleteIndex(int index, int size) {
 		if ((index > size) || (index <= EMPTY_LIST_SIZE)) {
 			return false;
 		} else { 
@@ -278,7 +299,7 @@ public class TextBuddy {
 		if (list.size() == EMPTY_LIST_SIZE) {
 			return String.format(MESSAGE_EMPTY_LIST, dataFile.getName());
 		} else {
-			listInStringFormat = printList();
+			listInStringFormat = listToString();
 		}
 		return listInStringFormat;
 	}
@@ -295,8 +316,8 @@ public class TextBuddy {
 	 * 
 	 * 
 	 */
-	public static String sortList() throws IOException{
-		if (list.size() == EMPTY_LIST_SIZE){
+	public static String sortList() throws IOException {
+		if (list.size() == EMPTY_LIST_SIZE) {
 			return String.format(MESSAGE_EMPTY_LIST, dataFile.getName());
 		} else {
 			Collections.sort(list, String.CASE_INSENSITIVE_ORDER);
@@ -318,7 +339,7 @@ public class TextBuddy {
 	public static String searchList(String userCommand) {
 		String wordToSearch = removeFirstWordFromCommand(userCommand);
 		
-		if(list.size() == EMPTY_LIST_SIZE){
+		if (list.size() == EMPTY_LIST_SIZE) {
 			return String.format(MESSAGE_EMPTY_LIST, dataFile.getName());
 		}
 		
@@ -388,7 +409,7 @@ public class TextBuddy {
 		System.out.print("command: ");
 	}
 	
-	private static String printList() {
+	private static String listToString() {
 		String concatList = new String();
 		for (int i = 0; i<list.size(); i++) {
 			concatList += (i + INCREMENT_INDEX + ". " + list.get(i) +"\n");
