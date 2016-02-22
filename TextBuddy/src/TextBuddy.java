@@ -33,6 +33,7 @@ public class TextBuddy {
 	private static final int NO_ARGUMENT_LENGTH = 0;
 	
 	private static final String NO_ARGUMENT_PROVIDED = "";
+	private static final String EMPTY_STRING = "";
 	
 	
 	private static final String MESSAGE_WELCOME = "Welcome to TextBuddy.%s is ready for use";
@@ -40,6 +41,8 @@ public class TextBuddy {
 	private static final String MESSAGE_TEXT_DELETED = "deleted from %s: \"%s\"";
 	private static final String MESSAGE_LIST_CLEARED = "all content deleted from %s";
 	private static final String MESSAGE_EMPTY_LIST = "%s is empty";
+	private static final String MESSAGE_SORT_COMPLETE = "list sorted alphabetically";
+	private static final String MESSAGE_KEYWORD_NOT_FOUND = "\"%s\" not found in list";
 	
 	private static final String ERROR_DUPLICATE_DETECTED = "Error: Duplicate content \"%s\" detected";
 	private static final String ERROR_INVALID_INDEX = "Error: Invalid Deletion Index";
@@ -146,23 +149,20 @@ public class TextBuddy {
 		case DELETE_ENTRY :
 			return deleteEntry(userCommand);
 		case DISPLAY_LIST :
-			displayList();
-			break;
+			return displayList();
 		case CLEAR_LIST :
 			return clearList(userCommand);
 		case SORT_LIST :
-			sortList();
-			break;
+			return sortList();
 		case SEARCH_LIST :
-			searchList(userCommand);
-			break;
+			return searchList(userCommand);
 		case EXIT_PROGRAM :
 			exitProgram();
 			break;
 		default :
 			return String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand);
 		}
-		return "";
+		return EMPTY_STRING;
 	}
 	 
 	/**
@@ -218,6 +218,8 @@ public class TextBuddy {
 	
 	/**
 	 * This operation removes an entry from the list if the index is valid
+	 * @param index
+	 * 				is the index to be deleted
 	 * @throws IOException 
 	 * 
 	 * 
@@ -237,7 +239,7 @@ public class TextBuddy {
 
 		//Ensure the index given is valid for proper deletion	
 		int removeIndex = Integer.parseInt(index);
-		boolean canDelete = canDelete(removeIndex, list.size());
+		boolean canDelete = validDeleteIndex(removeIndex, list.size());
 		
 		if (canDelete == false) {
 			return ERROR_INVALID_INDEX;
@@ -249,7 +251,7 @@ public class TextBuddy {
 		}
 	}
 	
-	public static boolean canDelete(int index, int size){
+	public static boolean validDeleteIndex(int index, int size){
 		if ((index > size) || (index <= EMPTY_LIST_SIZE)) {
 			return false;
 		} else { 
@@ -257,12 +259,14 @@ public class TextBuddy {
 		}
 	}
 	
-	private static void displayList() {
+	public static String displayList() {
+		String returnText;
 		if (list.size() == EMPTY_LIST_SIZE) {
-			showToUser(String.format(MESSAGE_EMPTY_LIST, dataFile.getName()));
+			return String.format(MESSAGE_EMPTY_LIST, dataFile.getName());
 		} else {
-			printList();
+			returnText = printList();
 		}
+		return returnText;
 	}
 	
 	public static String clearList(String userCommand) throws IOException {
@@ -271,36 +275,56 @@ public class TextBuddy {
 		return String.format(MESSAGE_LIST_CLEARED, dataFile.getName());
 	}
 	
-	public static void sortList() throws IOException{
+	/**
+	 * This operation sorts the content in the list alphabetically
+	 * @throws IOException 
+	 * 
+	 * 
+	 */
+	public static String sortList() throws IOException{
 		if (list.size() == EMPTY_LIST_SIZE){
-			showToUser(String.format(MESSAGE_EMPTY_LIST, dataFile.getName()));
+			return String.format(MESSAGE_EMPTY_LIST, dataFile.getName());
 		} else {
 			Collections.sort(list, String.CASE_INSENSITIVE_ORDER);
+			showToUser(MESSAGE_SORT_COMPLETE);
 			displayList();
 			saveFile();
+			return EMPTY_STRING;
 		}
 	}
 	
-	private static void searchList(String userCommand) {
+	/**
+	 * This operation displays texts in the list containing the keyword given by the user
+	 * @throws IOException 
+	 * 
+	 * 
+	 */
+	public static String searchList(String userCommand) {
 		String wordToSearch = removeFirstWordFromCommand(userCommand).toLowerCase();
 		
 		if(list.size() == EMPTY_LIST_SIZE){
-			showToUser(String.format(MESSAGE_EMPTY_LIST, dataFile.getName()));
+			return String.format(MESSAGE_EMPTY_LIST, dataFile.getName());
 		}
 		
 		if (wordToSearch.equals(NO_ARGUMENT_PROVIDED)) {
-			showToUser(String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand));
-			return;
+			return String.format(ERROR_UNRECOGNIZED_COMMAND, userCommand);
 		}
 		
-		int i = PRINT_LIST_START_INDEX;
+		boolean hasOneSearchResult = false;
+		int i = PRINT_LIST_START_INDEX;	
 		for (int j = 0; j < list.size(); j++) {
 			if (list.get(j).toLowerCase().contains(wordToSearch)) {
-					printLinesWithKeyword(i, list.get(j));
-					i += INCREMENT_INDEX;
+				printLinesWithKeyword(i, list.get(j));
+				hasOneSearchResult = true;
+				i += INCREMENT_INDEX;
 			}
 		}
 		
+		if (hasOneSearchResult == false) {
+			return String.format(MESSAGE_KEYWORD_NOT_FOUND, wordToSearch);
+		}
+		
+		return EMPTY_STRING;
 	}
 	
 	private static void exitProgram() throws IOException {
@@ -320,11 +344,19 @@ public class TextBuddy {
 		fileOutStream.close();
 	}
 	
+	/**
+	 * This operation returns the command type keyword from the user input
+	 * 
+	 */
 	private static String getCommandWord(String userCommand) {
 		String commandTypeString = userCommand.trim().split("\\s+")[0];
 		return commandTypeString;
 	}
 	
+	/**
+	 * This operation returns the text after the command type keyword
+	 * 
+	 */
 	private static String removeFirstWordFromCommand(String userCommand) {
 		return userCommand.replace(getCommandWord(userCommand), "").trim();
 	}
@@ -337,10 +369,12 @@ public class TextBuddy {
 		System.out.print("command: ");
 	}
 	
-	private static void printList() {
+	private static String printList() {
+		String concatList = new String();
 		for (int i = 0; i<list.size(); i++) {
-			System.out.println(i + INCREMENT_INDEX + ". " + list.get(i));
+			concatList += (i + INCREMENT_INDEX + ". " + list.get(i) +"\n");
 		}
+		return concatList;
 	}
 	
 	private static void printLinesWithKeyword(int i, String string) {
