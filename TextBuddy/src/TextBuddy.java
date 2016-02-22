@@ -11,13 +11,23 @@ import java.util.Collections;
 
 
 /**
- * This class is used to store, retrieve and delete the information provided by
- * the user. We assume that the inputs are all valid and there are only 5 user commands,
- * namely: add, delete, display, clear and exit. There can only be one deletion at a time, unless
- * the clear command is entered. User will have to provide an integer besides the command 'delete'.
- * For the add command, we assume that the user provides at least one argument, after the command 'add'
- * In the case of the exit and clear commands, we assume that there are no other arguments provided
- * other than the command itself.
+ * This class is used to store, retrieve and delete, sort and search the information provided by
+ * the user. All text will be stored into an ArrayList named list, which will be saved onto a file.
+ * Data is saved onto the file after every user operation which modifies the list.  
+ * 
+ * Assumptions: 
+ * 
+ * 1) We assume that the inputs are all valid and there are only 7 user commands,
+ *    namely: add, delete, display, clear, sort, search and exit.
+ * 2) All user commands are in lower case.
+ * 3) There can only be one deletion at a time, unless the clear command is entered. 
+ * 4) User will have to provide an integer besides the command 'delete'.
+ * 5) For the add command, we assume that the user provides at least one argument, after the command 'add'
+ * 6) In the case of the exit, sort, clear and display commands, 
+ *    we assume that there are no other arguments provided other than the command itself.
+ * 7) For the search command, we assume that there is only one keyword provided by the user.
+ * 
+ * @author Ishpal Singh Gill
  */
 
 public class TextBuddy {
@@ -192,6 +202,7 @@ public class TextBuddy {
 			return CommandType.INVALID_COMMAND;
 		}
 	}
+	
 	/**
 	 * This operation adds the user's text into the list
 	 * 
@@ -215,7 +226,6 @@ public class TextBuddy {
 		return String.format(MESSAGE_TEXT_ADDED, dataFile.getName(),wordsToInsert);
 	}
 	
-	
 	/**
 	 * This operation removes an entry from the list if the index is valid
 	 * @param index
@@ -231,7 +241,6 @@ public class TextBuddy {
 		if (list.size() == EMPTY_LIST_SIZE) {
 			return String.format(MESSAGE_EMPTY_LIST, dataFile.getName());
 		}
-		
 		// Checks if user has given a index to remove
 		if (index.equals(NO_ARGUMENT_PROVIDED)) {
 			return ERROR_INVALID_INDEX;
@@ -259,14 +268,19 @@ public class TextBuddy {
 		}
 	}
 	
+	/**
+	 * This operation converts the list into a String
+	 * @param listInStringFormat
+	 * 				is the string which contains the list
+	 */
 	public static String displayList() {
-		String returnText;
+		String listInStringFormat;
 		if (list.size() == EMPTY_LIST_SIZE) {
 			return String.format(MESSAGE_EMPTY_LIST, dataFile.getName());
 		} else {
-			returnText = printList();
+			listInStringFormat = printList();
 		}
-		return returnText;
+		return listInStringFormat;
 	}
 	
 	public static String clearList(String userCommand) throws IOException {
@@ -287,20 +301,22 @@ public class TextBuddy {
 		} else {
 			Collections.sort(list, String.CASE_INSENSITIVE_ORDER);
 			showToUser(MESSAGE_SORT_COMPLETE);
-			displayList();
+			String sortedList = displayList();
 			saveFile();
-			return EMPTY_STRING;
+			return sortedList;
 		}
 	}
 	
+	
 	/**
 	 * This operation displays texts in the list containing the keyword given by the user
+	 * It returns a String made up of lines containing the keyword or an error message
 	 * @throws IOException 
 	 * 
 	 * 
 	 */
 	public static String searchList(String userCommand) {
-		String wordToSearch = removeFirstWordFromCommand(userCommand).toLowerCase();
+		String wordToSearch = removeFirstWordFromCommand(userCommand);
 		
 		if(list.size() == EMPTY_LIST_SIZE){
 			return String.format(MESSAGE_EMPTY_LIST, dataFile.getName());
@@ -311,10 +327,12 @@ public class TextBuddy {
 		}
 		
 		boolean hasOneSearchResult = false;
+		String shortList = new String();
+		
 		int i = PRINT_LIST_START_INDEX;	
 		for (int j = 0; j < list.size(); j++) {
-			if (list.get(j).toLowerCase().contains(wordToSearch)) {
-				printLinesWithKeyword(i, list.get(j));
+			if (list.get(j).toLowerCase().contains(wordToSearch.toLowerCase())) {
+				shortList += printLinesWithKeyword(i, list.get(j));
 				hasOneSearchResult = true;
 				i += INCREMENT_INDEX;
 			}
@@ -324,8 +342,9 @@ public class TextBuddy {
 			return String.format(MESSAGE_KEYWORD_NOT_FOUND, wordToSearch);
 		}
 		
-		return EMPTY_STRING;
+		return shortList;
 	}
+	
 	
 	private static void exitProgram() throws IOException {
 		saveFile();
@@ -377,8 +396,8 @@ public class TextBuddy {
 		return concatList;
 	}
 	
-	private static void printLinesWithKeyword(int i, String string) {
-		System.out.println(i +". " + string );	
+	private static String printLinesWithKeyword(int index, String content) {
+		return index +". " + content + "\n";	
 	}
 	
 	public static int getLineCount(){
