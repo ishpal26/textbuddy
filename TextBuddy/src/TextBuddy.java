@@ -109,7 +109,7 @@ public class TextBuddy {
 	private static Scanner scanner = new Scanner(System.in);
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException{
-		checkValidArg(args);
+		checkValidArg(args);  
 		checkFile(args);
 		runProgram();
 	}

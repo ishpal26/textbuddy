@@ -92,7 +92,7 @@ public class TextBuddyTest {
 		assertEquals(8, TextBuddy.getLineCount());
 	}
 	
-	@Test
+	@Test  
 	public void testSearch() throws IOException{
 		assertEquals(SEARCH_RESULT, TextBuddy.searchList("search night"));
 		assertEquals("\"cs2103\" not found in list", TextBuddy.searchList("search cs2103"));
