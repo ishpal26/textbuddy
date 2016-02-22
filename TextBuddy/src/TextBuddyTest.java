@@ -1,8 +1,6 @@
 import static org.junit.Assert.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

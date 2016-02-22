@@ -101,7 +101,7 @@ public class TextBuddy {
 	private static final String ERROR_INVALID_EXECUTION_FORMAT = "Error: Execution format --> java progam filename.extension";
 	
 	
-	// These are the different command types
+	// These are the different command types  
 	enum CommandType {
 		ADD_ENTRY, DISPLAY_LIST, DELETE_ENTRY, CLEAR_LIST, EXIT_PROGRAM, INVALID_COMMAND, SORT_LIST, SEARCH_LIST
 	};
